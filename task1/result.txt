@@ -1,0 +1,109 @@
+Microsoft Windows [版本 10.0.26100.4652]
+(c) Microsoft Corporation。保留所有权利。
+
+F:\redis\Redis-8.10.2-Windows-x64-cygwin-with-Service>redis-cli.exe -p 30216 -c
+127.0.0.1:30216> cluster info
+cluster_state:ok
+cluster_slots_assigned:16384
+cluster_slots_ok:16384
+cluster_slots_pfail:0
+cluster_slots_fail:0
+cluster_known_nodes:6
+cluster_size:3
+cluster_current_epoch:6
+cluster_my_epoch:1
+cluster_stats_messages_ping_sent:819
+cluster_stats_messages_pong_sent:819
+cluster_stats_messages_sent:1638
+cluster_stats_messages_ping_received:819
+cluster_stats_messages_pong_received:819
+127.0.0.1:30216> hset exam:12403030216:student studentId 12403030216 name 张三 className 124030302 courseId COURSE-12403030216-01 status learning
+-> Redirected to slot [10955] located at 127.0.0.1:30218
+(integer) 0
+127.0.0.1:30218> hset exam:12403030216:student status completed
+(integer) 0
+127.0.0.1:30218> hmget exam:12403030216:student name status
+1) "\xe5\xbc\xa0\xe4\xb8\x89"
+2) "completed"
+127.0.0.1:30218> hgetall exam:12403030216:student
+ 1) "studentId"
+ 2) "12403030216"
+ 3) "name"
+ 4) "\xe5\xbc\xa0\xe4\xb8\x89"
+ 5) "className"
+ 6) "124030302"
+ 7) "courseId"
+ 8) "COURSE-12403030216-01"
+ 9) "status"
+10) "completed"
+127.0.0.1:30218> sadd exam:12403030216:done CH01
+-> Redirected to slot [10424] located at 127.0.0.1:30217
+(integer) 1
+127.0.0.1:30217> scard exam:12403030216:done
+(integer) 1
+127.0.0.1:30217> sadd exam:12403030216:done CH02
+(integer) 1
+127.0.0.1:30217> scard exam:12403030216:done
+(integer) 2
+127.0.0.1:30217> sadd exam:12403030216:done CH02
+(integer) 0
+127.0.0.1:30217> scard exam:12403030216:done
+(integer) 2
+127.0.0.1:30217> sadd exam:12403030216:done CH03
+(integer) 1
+127.0.0.1:30217> scard exam:12403030216:done
+(integer) 3
+127.0.0.1:30217> smembers exam:12403030216:done
+1) "CH01"
+2) "CH02"
+3) "CH03"
+127.0.0.1:30217> sismember exam:12403030216:done CH02
+(integer) 1
+127.0.0.1:30217> sismember exam:12403030216:done CH04
+(integer) 0
+127.0.0.1:30217> zadd exam:12403030216:rank 124030372 Student:12403030216 85 demo:01 90 demo:02 60 demo:03 80 demo:04
+-> Redirected to slot [11849] located at 127.0.0.1:30218
+(integer) 0
+127.0.0.1:30218> zrevrange exam:12403030216:rank 0 2 WITHSCORES
+1) "Student:12403030216"
+2) "124030372"
+3) "demo:02"
+4) "90"
+5) "demo:01"
+6) "85"
+127.0.0.1:30218> zincrby exam:12403030216:rank 20 Student:12403030216
+"124030392"
+127.0.0.1:30218> zrevrange exam:12403030216:rank 0 2 WITHSCORES
+1) "Student:12403030216"
+2) "124030392"
+3) "demo:02"
+4) "90"
+5) "demo:01"
+6) "85"
+127.0.0.1:30218> zscore exam:12403030216:rank Student:12403030216
+"124030392"
+127.0.0.1:30218> zrevrank exam:12403030216:rank Student:12403030216
+(integer) 0
+127.0.0.1:30218> set exam:12403030216:session s001 EX 5
+-> Redirected to slot [1995] located at 127.0.0.1:30216
+OK
+127.0.0.1:30216> get exam:12403030216:session
+(nil)
+127.0.0.1:30216> ttl exam:12403030216:session
+(integer) -2
+127.0.0.1:30216> get exam:12403030216:session
+(nil)
+127.0.0.1:30216> ttl exam:12403030216:session
+(integer) -2
+127.0.0.1:30216> type exam:12403030216:info
+none
+127.0.0.1:30216> type exam:12403030216:done
+-> Redirected to slot [10424] located at 127.0.0.1:30217
+set
+127.0.0.1:30217> type exam:12403030216:rank
+-> Redirected to slot [11849] located at 127.0.0.1:30218
+zset
+127.0.0.1:30218> type exam:12403030216:session
+-> Redirected to slot [1995] located at 127.0.0.1:30216
+none
+127.0.0.1:30216>
