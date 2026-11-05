@@ -1,0 +1,4 @@
+_id：字符串string，文档唯一主键
+title：字符串string，图书名称
+stock：32位整型NumberInt，库存，只存整数
+price：高精度十进制NumberDecimal，价格，防止浮点精度丢失

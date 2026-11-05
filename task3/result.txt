@@ -1,0 +1,474 @@
+Microsoft Windows [版本 10.0.26100.4652]
+(c) Microsoft Corporation。保留所有权利。
+
+F:\>mongosh
+Current Mongosh Log ID: 6aec2bff46d89971d51e83f4
+Connecting to:          mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.11.1
+Using MongoDB:          8.3.11
+Using Mongosh:          2.11.1
+mongosh 2.13.0 is available for download: https://www.mongodb.com/try/download/shell
+
+For mongosh info see: https://www.mongodb.com/docs/mongodb-shell/
+
+------
+   The server generated these startup warnings when booting
+   2026-11-05T15:08:36.734+08:00: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted
+------
+
+test> const SID = "12403030216";
+| const examDB = db.getSiblingDB("exam_" + SID);
+| examDB.courses.deleteMany({});
+| examDB.courses.insertMany([
+|   {
+|     _id: "COURSE-" + SID + "-01",
+|     title: "NoSQL 数据库",
+|     teacher: "张老师",
+|     status: "OPEN",
+|     chapters: [
+|       { chapterId: "CH01", title: "MongoDB 基础", hours: 2 },
+|       { chapterId: "CH02", title: "Redis 基础", hours: 2 }
+|     ]
+|   },
+|   {
+|     _id: "COURSE-" + SID + "-02",
+|     title: "数据库原理",
+|     teacher: "张老师",
+|     status: "CLOSED",
+|     chapters: [
+|       { chapterId: "CH01", title: "关系模型", hours: 2 }
+|     ]
+|   },
+|   {
+|     _id: "COURSE-" + SID + "-03",
+|     title: "机器学习",
+|     teacher: "李老师",
+|     status: "OPEN",
+|     chapters: [
+|       { chapterId: "CH01", title: "分类", hours: 2 },
+|       { chapterId: "CH02", title: "聚类", hours: 2 }
+|     ]
+|   }
+| ]);
+|
+{
+  acknowledged: true,
+  insertedIds: {
+    '0': 'COURSE-12403030216-01',
+    '1': 'COURSE-12403030216-02',
+    '2': 'COURSE-12403030216-03'
+  }
+}
+test> const SID = "12403030216";
+| const examDB = db.getSiblingDB("exam_" + SID);
+| examDB.courses.aggregate([
+|   {
+|     $match: {
+|       teacher: "张老师",
+|       status: "OPEN"
+|     }
+|   },
+|   {
+|     $project: {
+|       _id: 1,
+|       title: 1,
+|       chapterCount: { $size: "$chapters" }
+|     }
+|   }
+| ])
+|
+[
+  { _id: 'COURSE-12403030216-01', title: 'NoSQL 数据库', chapterCount: 2 }
+]
+test> const SID = "12403030216";
+| const examDB = db.getSiblingDB("exam_" + SID);
+| examDB.courses.updateOne(
+|   {
+|     _id: "COURSE-" + SID + "-01",
+|     "chapters.chapterId": "CH02"
+|   },
+|   {
+|     $set: {
+|       "chapters.$.title": "Redis 基础与应用-" + SID
+|     }
+|   }
+| );
+| // 查询查看更新后文档
+| examDB.courses.find({_id:"COURSE-" + SID + "-01"})
+|
+[
+  {
+    _id: 'COURSE-12403030216-01',
+    title: 'NoSQL 数据库',
+    teacher: '张老师',
+    status: 'OPEN',
+    chapters: [
+      { chapterId: 'CH01', title: 'MongoDB 基础', hours: 2 },
+      { chapterId: 'CH02', title: 'Redis 基础与应用-12403030216', hours: 2 }
+    ]
+  }
+]
+test> const SID = "12403030216";
+| const examDB = db.getSiblingDB("exam_" + SID);
+| examDB.courses.updateOne(
+|   { _id: "COURSE-" + SID + "-01" },
+|   {
+|     $addToSet: {
+|       chapters: {
+|         chapterId: "CH03",
+|         title: "Redis 高级操作",
+|         hours: 2
+|       }
+|     }
+|   }
+| );
+|
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 1,
+  modifiedCount: 1,
+  upsertedCount: 0
+}
+test> const SID = "12403030216";
+| const examDB = db.getSiblingDB("exam_" + SID);
+| let res = examDB.courses.findOne({_id:"COURSE-" + SID + "-01"});
+| console.log("(1) CH02标题：", res.chapters.find(c=>c.chapterId=="CH02").title);
+| console.log("(2) CH03数量：", res.chapters.filter(c=>c.chapterId=="CH03").length);
+| console.log("(3) 最终章节总数：", res.chapters.length);
+| console.log("(4) teacher=", res.teacher, " status=", res.status);
+|
+(1) CH02标题： Redis 基础与应用-12403030216
+(2) CH03数量： 1
+(3) 最终章节总数： 3
+(4) teacher= 张老师  status= OPEN
+
+test> const SID = "12403030216";
+| const BOOK_ID = "BOOK-" + SID;
+| const Stock = 11;
+| const Buy = 2;
+| const dbName = "bookshop";
+| const inventory = db.getSiblingDB(dbName).inventory;
+| const orders = db.getSiblingDB(dbName).orders;
+|
+| function resetData(){
+|     inventory.deleteMany({});
+|     orders.deleteMany({});
+|     inventory.insertOne({
+|         _id: BOOK_ID,
+|         title: "NoSQL数据库教材",
+|         stock: Stock
+|     });
+| }
+[Function: resetData]
+test> resetData();
+| let res = inventory.updateOne(
+|     {
+|         _id: BOOK_ID,
+|         stock: {$gte: Buy}
+|     },
+|     {$inc: {stock: -Buy}}
+| );
+| printjson(res);
+| print("更新后库存：");
+| printjson(inventory.findOne({_id:BOOK_ID}));
+|
+{
+  acknowledged: true,
+  insertedId: null,
+  matchedCount: 1,
+  modifiedCount: 1,
+  upsertedCount: 0
+}
+更新后库存：
+{
+  _id: 'BOOK-12403030216',
+  title: 'NoSQL数据库教材',
+  stock: 9
+}
+
+test> resetData();
+| let res = inventory.updateOne(
+|     {_id: BOOK_ID, stock: {$gte: Buy}},
+|     {$inc: {stock: -Buy}}
+| );
+| if(res.matchedCount === 1){
+|     print("扣减成功");
+| }else{
+|     print("库存不足或教材不存在");
+| }
+|
+扣减成功
+
+test> async function placeOrder(requestId, forceError=false){
+|     const session = db.getMongo().startSession();
+|     session.startTransaction();
+|     try{
+|         const updateRet = await inventory.updateOne(
+|             {
+|                 _id: BOOK_ID,
+|                 stock: {$gte: Buy}
+|             },
+|             {$inc:{stock: -Buy}},
+|             {session}
+|         );
+|         if(updateRet.matchedCount !== 1){
+|             await session.abortTransaction();
+|             session.endSession();
+|             return {ok:false, msg:"库存不足或教材不存在"};
+|         }
+|
+|         if(forceError){
+|             throw new Error("人工触发异常，测试回滚");
+|         }
+|
+|         await orders.insertOne({
+|             _id: requestId,
+|             bookId: BOOK_ID,
+|             studentId: SID,
+|             quantity: Buy
+|         },{session});
+|
+|         await session.commitTransaction();
+|         session.endSession();
+|         return {ok:true, msg:"扣减下单成功"};
+|   trycatch(e){
+|         await session.abortTransaction();
+|         session.endSession();
+|         return {ok:false, msg:"数据库执行异常："+e.message};
+|     }
+| }
+|
+[AsyncFunction: placeOrder]
+test> resetData();
+| print("===== T1 正常订购 =====");
+| let r1 = await placeOrder("req_t1_001", false);
+| let inv1 = inventory.findOne({_id:BOOK_ID});
+| let ordCnt1 = orders.countDocuments();
+| print("初始库存:",Stock,"购买数量:",Buy);
+| print("返回结果：",r1);
+| print("最终库存：",inv1.stock,"订单总数：",ordCnt1);
+|
+Uncaught:
+SyntaxError: 'await' is only allowed within async functions and at the top levels of modules. (3:9)
+
+  1 | resetData();
+  2 | print("===== T1 正常订购 =====");
+> 3 | let r1 = await placeOrder("req_t1_001", false);
+    |          ^
+  4 | let inv1 = inventory.findOne({_id:BOOK_ID});
+  5 | let ordCnt1 = orders.countDocuments();
+  6 | print("初始库存:",Stock,"购买数量:",Buy);
+
+test> resetData();
+| (async ()=>{
+|     print("===== T1 正常订购 =====");
+|     let r1 = await placeOrder("req_t1_001", false);
+|     let inv1 = inventory.findOne({_id:BOOK_ID});
+|     let ordCnt1 = orders.countDocuments();
+|     print("初始库存:",Stock,"购买数量:",Buy);
+|     print("返回结果: ",r1);
+|     print("最终库存: ",inv1.stock,"订单总数: ",ordCnt1);
+| })()
+|
+===== T1 正常订购 =====
+初始库存: 11 购买数量: 2
+返回结果:  { ok: false, msg: '数据库执行异常：i?.inTransaction is not a function' }
+最终库存:  11 订单总数:  0
+
+test> resetData();
+| inventory.updateOne({_id:BOOK_ID},{$set:{stock:Buy-1}});
+| (async ()=>{
+|     print("\n===== T2 库存不足 =====");
+|     let r2 = await placeOrder("req_t2_001", false);
+|     let inv2 = inventory.findOne({_id:BOOK_ID});
+|     let ordCnt2 = orders.countDocuments();
+|     print("初始库存:",Buy-1,"购买数量:",Buy);
+|     print("返回结果: ",r2);
+|     print("最终库存: ",inv2.stock,"订单总数: ",ordCnt2);
+| })()
+|
+
+===== T2 库存不足 =====
+初始库存: 1 购买数量: 2
+返回结果:  { ok: false, msg: '数据库执行异常：i?.inTransaction is not a function' }
+最终库存:  1 订单总数:  0
+
+test> resetData();
+| (async ()=>{
+|     print("\n===== T3 中途异常 =====");
+|     let r3 = await placeOrder("req_t3_001", true);
+|     let inv3 = inventory.findOne({_id:BOOK_ID});
+|     let ordCnt3 = orders.countDocuments();
+|     print("初始库存:",Stock,"购买数量:",Buy);
+|     print("返回结果: ",r3);
+|     print("最终库存: ",inv3.stock,"订单总数: ",ordCnt3);
+| })()
+|
+
+===== T3 中途异常 =====
+初始库存: 11 购买数量: 2
+返回结果:  { ok: false, msg: '数据库执行异常：i?.inTransaction is not a function' }
+最终库存:  11 订单总数:  0
+
+test> resetData();
+| (async ()=>{
+|     print("\n===== T4 连续购买（共6次） =====");
+|     let succ=0,fail=0;
+|     for(let i=0;i<6;i++){
+|         let ret = await placeOrder("req_t4_"+i, false);
+|         if(ret.ok) succ++;
+|         else fail++;
+|     }
+|     let inv4 = inventory.findOne({_id:BOOK_ID});
+|     let ordCnt4 = orders.countDocuments();
+|     print("初始库存:",Stock,"单次购买:",Buy,"尝试总次数：6");
+|     print("成功次数：",succ,"失败次数：",fail);
+|     print("最终库存：",inv4.stock,"订单总数：",ordCnt4);
+| })()
+|
+
+===== T4 连续购买（共6次） =====
+初始库存: 11 单次购买: 2 尝试总次数：6
+成功次数： 0 失败次数： 6
+最终库存： 11 订单总数： 0
+
+test> resetData();
+| (async ()=>{
+|     print("===== T1 正常订购 =====");
+|     let r1 = await placeOrder("req_t1_001", false);
+|     let inv1 = inventory.findOne({_id:BOOK_ID});
+|     let ordCnt1 = orders.countDocuments();
+|     let succ = r1.ok ? 1 : 0;
+|     let fail = r1.ok ? 0 : 1;
+|     let checkOk = "否";
+|     // T1预期：成功1次，库存变成9，订单1条
+|     if(succ === 1 && inv1.stock === 9 && ordCnt1 === 1){
+|         checkOk = "是";
+|     }
+|     print("(1)场景编号：T1 正常订购");
+|     print("(2)初始库存：",Stock);
+|     print("(3)购买数量：",Buy);
+|     print("(4)成功次数：",succ);
+|     print("(5)失败次数：",fail);
+|     print("(6)最终库存：",inv1.stock);
+|     print("(7)最终订单数量：",ordCnt1);
+|     print("(8)是否通过本人编写的核验：",checkOk);
+| })()
+|
+===== T1 正常订购 =====
+(1)场景编号：T1 正常订购
+(2)初始库存： 11
+(3)购买数量： 2
+(4)成功次数： 0
+(5)失败次数： 1
+(6)最终库存： 11
+(7)最终订单数量： 0
+(8)是否通过本人编写的核验： 否
+
+test> resetData();
+| inventory.updateOne({_id:BOOK_ID},{$set:{stock:Buy-1}});
+| (async ()=>{
+|     print("\n===== T2 库存不足 =====");
+|     let r2 = await placeOrder("req_t2_001", false);
+|     let inv2 = inventory.findOne({_id:BOOK_ID});
+|     let ordCnt2 = orders.countDocuments();
+|     let succ = r2.ok ? 1 : 0;
+|     let fail = r2.ok ? 0 : 1;
+|     let checkOk = "否";
+|     // T2预期：失败1次，库存不变=1，订单0
+|     if(succ === 0 && inv2.stock === 1 && ordCnt2 === 0){
+|         checkOk = "是";
+|     }
+|     print("(1)场景编号：T2 库存不足");
+|     print("(2)初始库存：",Buy-1);
+|     print("(3)购买数量：",Buy);
+|     print("(4)成功次数：",succ);
+|     print("(5)失败次数：",fail);
+|     print("(6)最终库存：",inv2.stock);
+|     print("(7)最终订单数量：",ordCnt2);
+|     print("(8)是否通过本人编写的核验：",checkOk);
+| })()
+|
+
+===== T2 库存不足 =====
+(1)场景编号：T2 库存不足
+(2)初始库存： 1
+(3)购买数量： 2
+(4)成功次数： 0
+(5)失败次数： 1
+(6)最终库存： 1
+(7)最终订单数量： 0
+(8)是否通过本人编写的核验： 是
+
+test> resetData();
+| (async ()=>{
+|     print("\n===== T3 中途异常 =====");
+|     let r3 = await placeOrder("req_t3_001", true);
+|     let inv3 = inventory.findOne({_id:BOOK_ID});
+|     let ordCnt3 = orders.countDocuments();
+|     let succ = r3.ok ? 1 : 0;
+|     let fail = r3.ok ? 0 : 1;
+|     let checkOk = "否";
+|     // T3预期：失败1次，库存不变11，订单0
+|     if(succ === 0 && inv3.stock === 11 && ordCnt3 === 0){
+|         checkOk = "是";
+|     }
+|     print("(1)场景编号：T3 中途异常");
+|     print("(2)初始库存：",Stock);
+|     print("(3)购买数量：",Buy);
+|     print("(4)成功次数：",succ);
+|     print("(5)失败次数：",fail);
+|     print("(6)最终库存：",inv3.stock);
+|     print("(7)最终订单数量：",ordCnt3);
+|     print("(8)是否通过本人编写的核验：",checkOk);
+| })()
+|
+
+===== T3 中途异常 =====
+(1)场景编号：T3 中途异常
+(2)初始库存： 11
+(3)购买数量： 2
+(4)成功次数： 0
+(5)失败次数： 1
+(6)最终库存： 11
+(7)最终订单数量： 0
+(8)是否通过本人编写的核验： 是
+
+test> resetData();
+| (async ()=>{
+|     print("\n===== T4 连续购买（共6次） =====");
+|     let succ=0,fail=0;
+|     for(let i=0;i<6;i++){
+|         let ret = await placeOrder("req_t4_"+i, false);
+|         if(ret.ok) succ++;
+|         else fail++;
+|     }
+|     let inv4 = inventory.findOne({_id:BOOK_ID});
+|     let ordCnt4 = orders.countDocuments();
+|     let checkOk = "否";
+|     // T4预期：成功5次，失败1次，库存1，订单5
+|     if(succ ===5 && fail ===1 && inv4.stock ===1 && ordCnt4 ===5){
+|         checkOk = "是";
+|     }
+|     print("(1)场景编号：T4 连续购买");
+|     print("(2)初始库存：",Stock);
+|     print("(3)购买数量：",Buy);
+|     print("(4)成功次数：",succ);
+|     print("(5)失败次数：",fail);
+|     print("(6)最终库存：",inv4.stock);
+|     print("(7)最终订单数量：",ordCnt4);
+|     print("(8)是否通过本人编写的核验：",checkOk);
+| })()
+|
+
+===== T4 连续购买（共6次） =====
+(1)场景编号：T4 连续购买
+(2)初始库存： 11
+(3)购买数量： 2
+(4)成功次数： 0
+(5)失败次数： 6
+(6)最终库存： 11
+(7)最终订单数量： 0
+(8)是否通过本人编写的核验： 否
+
+test>
